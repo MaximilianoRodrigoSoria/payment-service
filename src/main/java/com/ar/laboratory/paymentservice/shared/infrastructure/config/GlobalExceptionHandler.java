@@ -4,6 +4,9 @@ import com.ar.laboratory.paymentservice.example.domain.exception.ExampleAlreadyE
 import com.ar.laboratory.paymentservice.example.domain.exception.ExampleNotFoundException;
 import com.ar.laboratory.paymentservice.shared.infrastructure.exception.BadRequestException;
 import com.ar.laboratory.paymentservice.shared.infrastructure.exception.InfrastructureException;
+import com.ar.laboratory.paymentservice.payment.domain.exception.InvalidPaymentTransitionException;
+import com.ar.laboratory.paymentservice.payment.domain.exception.InvalidWebhookSignatureException;
+import com.ar.laboratory.paymentservice.payment.domain.exception.PaymentNotFoundException;
 import com.ar.laboratory.paymentservice.shared.infrastructure.logging.MdcFilter;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import java.time.LocalDateTime;
@@ -80,6 +83,24 @@ public class GlobalExceptionHandler {
                         .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(PaymentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentNotFound(
+            PaymentNotFoundException ex, WebRequest request) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidPaymentTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTransition(
+            InvalidPaymentTransitionException ex, WebRequest request) {
+        return build(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidWebhookSignatureException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSignature(
+            InvalidWebhookSignatureException ex, WebRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -168,6 +189,20 @@ public class GlobalExceptionHandler {
                         .build();
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    private ResponseEntity<ErrorResponse> build(
+            HttpStatus status, String message, WebRequest request) {
+        return ResponseEntity.status(status)
+                .body(
+                        ErrorResponse.builder()
+                                .timestamp(LocalDateTime.now())
+                                .status(status.value())
+                                .error(status.getReasonPhrase())
+                                .message(message)
+                                .path(getPath(request))
+                                .traceId(generateTraceId())
+                                .build());
     }
 
     private String getPath(WebRequest request) {

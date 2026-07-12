@@ -44,9 +44,13 @@ Java 21 · Stripe · PostgreSQL · Ledger · Resilience4j · Gradle · Flyway ·
 
 Organizado por **feature** en capas `domain -> application -> infrastructure`, con la regla de dependencia verificada por ArchUnit. La logica de negocio (dominio y casos de uso) no depende de framework ni de infraestructura; los adaptadores (web, persistencia, mensajeria) implementan puertos definidos por la aplicacion.
 
+## API
+
+Contexto `/payment-service`. `POST /api/v1/payments` (con `Idempotency-Key`) inicia un cobro; `POST /webhooks/stripe` recibe la verdad del pago (firma HMAC verificada); `GET /api/v1/payments/{id}` consulta el estado.
+
 ## Estado
 
-🚧 En planificacion / arranque. El diseno detallado (epicas, historias y criterios de aceptacion) vive en el plan del portafolio.
+✅ Nucleo funcional implementado: cobro idempotente (por `Idempotency-Key`), integracion con un gateway (Stripe en modo test, stub), webhook con **verificacion de firma HMAC** e idempotencia por `event.id`, y **ledger de doble entrada** (debito de caja + credito de ingresos, sumando cero). Persistencia JPA/PostgreSQL + migracion Flyway, tests (unit + Testcontainers con firma real). Ejercicio de portafolio: no procesa dinero real ni es apto para produccion sin revision PCI-DSS. Capa siguiente: reembolsos/disputas y job de reconciliacion contra el proveedor.
 
 ---
 

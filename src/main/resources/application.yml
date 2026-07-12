@@ -124,6 +124,10 @@ logging:
 
 # Configuración de aplicación
 app:
+  # Pagos
+  payment:
+    webhook-secret: "whsec_test_secret_change_me"
+
   # Habilitar/deshabilitar caché con Redis
   # Valores: true (habilita caché) / false (deshabilita caché)
   cache:
@@ -183,4 +187,9 @@ resilience4j:
         # Tiempo máximo que un hilo espera para obtener un permiso antes de recibir 429
         timeout-duration: 0s
         # Registrar métricas en Actuator
+        register-health-indicator: true
+      payments-api:
+        limit-for-period: 50
+        limit-refresh-period: 1s
+        timeout-duration: 0s
         register-health-indicator: true
